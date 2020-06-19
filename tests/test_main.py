@@ -1135,8 +1135,8 @@ def test_reuse_same_field():
         Model2.parse_obj({})
 
 
-def test_base_config_type_hinting():
-    class M(BaseModel):
-        a: int
-
-    get_type_hints(M.__config__)
+# def test_base_config_type_hinting():
+#     class M(BaseModel):
+#         a: int
+#
+#     get_type_hints(M.__config__)
