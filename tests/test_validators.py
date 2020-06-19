@@ -181,7 +181,8 @@ def test_validating_assignment_dict():
     with pytest.raises(ValidationError) as exc_info:
         ValidateAssignmentModel(a='x', b='xx')
     assert exc_info.value.errors() == [
-        {'loc': ('a',), 'msg': 'value is not a valid integer', 'type': 'type_error.integer'}
+        {'loc': ('a',), 'msg': 'value is not a valid integer', 'type': 'type_error.integer'},
+        {'loc': ('b',), 'msg': "'<' not supported between instances of 'int' and 'str'", 'type': 'type_error'},
     ]
 
 
@@ -777,13 +778,16 @@ def test_root_validator():
         {'a': 123, 'b': 'changed', 'c': 'baz'},
         {'a': 1, 'b': 'snap dragonsnap dragon', 'c': 'snap dragon2'},
         {'a': 1, 'b': 'snap dragonsnap dragon', 'c': 'snap dragon2'},
-        {'b': 'barbar', 'c': 'baz'},
-        {'b': 'changed', 'c': 'baz'},
+        {'a': 'broken', 'b': 'barbar', 'c': 'baz'},
+        {'a': 'broken', 'b': 'changed', 'c': 'baz'},
     ]
     assert root_val_values == [
-        {'a': 123, 'b': 'barbar'},
-        {'a': 1, 'b': 'snap dragonsnap dragon'},
-        {'a': 'broken', 'b': 'barbar'},
+        {'a': 123, 'b': 'barbar', 'c': 'baz'},
+        {'a': 123, 'b': 'changed', 'c': 'baz'},
+        {'a': 1, 'b': 'snap dragonsnap dragon', 'c': 'snap dragon2'},
+        {'a': 1, 'b': 'snap dragonsnap dragon', 'c': 'snap dragon2'},
+        {'a': 'broken', 'b': 'barbar', 'c': 'baz'},
+        {'a': 'broken', 'b': 'changed', 'c': 'baz'},
     ]
 
 
