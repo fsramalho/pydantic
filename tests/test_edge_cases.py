@@ -728,7 +728,7 @@ def test_return_errors_error():
         bar: List[int]
 
     d, f, e = validate_model(Model, {'foo': '123', 'bar': (1, 2, 'x')}, False)
-    assert d == {'bar': (1, 2, 'x'), 'foo': 123}
+    assert d == {'bar': None, 'foo': 123}
     assert f == {'foo', 'bar'}
     assert e.errors() == [{'loc': ('bar', 2), 'msg': 'value is not a valid integer', 'type': 'type_error.integer'}]
 
@@ -1565,13 +1565,7 @@ def test_pass_nested_model_values():
             return values
 
     with pytest.raises(ValidationError) as exc_info:
-        Foo(
-            **dict(
-                number=1,
-                bar=dict(field_1='a'),
-                bar_list=[(23, 3), dict(field_1=[20, 34]), dict(field_1='a')],
-            )
-        )
+        Foo(**dict(number=1, bar=dict(field_1='a'), bar_list=[(23, 3), dict(field_1=[20, 34]), dict(field_1='a')]))
 
     assert exc_info.value.errors() == [
         {'loc': ('bar', '__root__'), 'msg': 'field_1 cannot be a', 'type': 'value_error'},
