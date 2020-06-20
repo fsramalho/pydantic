@@ -894,6 +894,7 @@ def validate_model(  # noqa: C901 (ignore complexity)
         if value is _missing:
             if field.required:
                 errors.append(ErrorWrapper(MissingError(), loc=field.alias))
+                values[name] = None
                 continue
 
             value = field.get_default()
@@ -968,7 +969,7 @@ def parse_field_value_based_on_errors(value: Any, errors: Union[ErrorWrapper, Li
         field_model = field_models[0] if field_models else None
 
     else:
-        raise NotImplementedError(f"Errors from field.validate with type {type(errors)} not handled")
+        raise NotImplementedError(f'Errors from field.validate with type {type(errors)} not handled')
 
     if not field_model:
         return
