@@ -57,6 +57,7 @@ if TYPE_CHECKING:
     ConfigType = Type['BaseConfig']
     Model = TypeVar('Model', bound='BaseModel')
 
+
     class SchemaExtraCallable(typing_extensions.Protocol):
         @overload
         def __call__(self, schema: Dict[str, Any]) -> None:
@@ -65,11 +66,6 @@ if TYPE_CHECKING:
         @overload  # noqa: F811
         def __call__(self, schema: Dict[str, Any], model_class: Type['Model']) -> None:  # noqa: F811
             pass
-
-
-else:
-    SchemaExtraCallable = Callable[..., None]
-
 
 try:
     import cython  # type: ignore
@@ -244,9 +240,9 @@ class ModelMetaclass(ABCMeta):
                     validate_field_name(bases, ann_name)
                     value = namespace.get(ann_name, Undefined)
                     if (
-                        isinstance(value, untouched_types)
-                        and ann_type != PyObject
-                        and not lenient_issubclass(getattr(ann_type, '__origin__', None), Type)
+                            isinstance(value, untouched_types)
+                            and ann_type != PyObject
+                            and not lenient_issubclass(getattr(ann_type, '__origin__', None), Type)
                     ):
                         continue
                     fields[ann_name] = inferred = ModelField.infer(
@@ -261,10 +257,10 @@ class ModelMetaclass(ABCMeta):
 
             for var_name, value in namespace.items():
                 if (
-                    var_name not in annotations
-                    and is_valid_field(var_name)
-                    and not isinstance(value, untouched_types)
-                    and var_name not in class_vars
+                        var_name not in annotations
+                        and is_valid_field(var_name)
+                        and not isinstance(value, untouched_types)
+                        and var_name not in class_vars
                 ):
                     validate_field_name(bases, var_name)
                     inferred = ModelField.infer(
@@ -292,13 +288,28 @@ class ModelMetaclass(ABCMeta):
         else:
             json_encoder = pydantic_encoder
         pre_rv_new, post_rv_new = extract_root_validators(namespace)
+
+        dedupe_pre_rv = set([])
+        pre_rv_unique = []
+        for rv in pre_root_validators + pre_rv_new:
+            if rv not in dedupe_pre_rv:
+                dedupe_pre_rv.add(rv)
+                pre_rv_unique.append(rv)
+
+        dedupe_post_rv = set([])
+        post_rv_unique = []
+        for rv in post_root_validators + post_rv_new:
+            if rv not in dedupe_post_rv:
+                dedupe_post_rv.add(rv)
+                post_rv_unique.append(rv)
+
         new_namespace = {
             '__config__': config,
             '__fields__': fields,
             '__field_defaults__': fields_defaults,
             '__validators__': vg.validators,
-            '__pre_root_validators__': pre_root_validators + pre_rv_new,
-            '__post_root_validators__': post_root_validators + post_rv_new,
+            '__pre_root_validators__': pre_rv_unique,
+            '__post_root_validators__': post_rv_unique,
             '__schema_cache__': {},
             '__json_encoder__': staticmethod(json_encoder),
             '__custom_root_type__': _custom_root_type,
@@ -333,7 +344,6 @@ class BaseModel(Representation, metaclass=ModelMetaclass):
     def __init__(__pydantic_self__, **data: Any) -> None:
         """
         Create a new model by parsing and validating input data from keyword arguments.
-
         Raises ValidationError if the input data cannot be parsed to form a valid model.
         """
         # Uses something other than `self` the first arg to allow "self" as a settable attribute
@@ -369,19 +379,18 @@ class BaseModel(Representation, metaclass=ModelMetaclass):
         object.__setattr__(self, '__fields_set__', state['__fields_set__'])
 
     def dict(
-        self,
-        *,
-        include: Union['AbstractSetIntStr', 'MappingIntStrAny'] = None,
-        exclude: Union['AbstractSetIntStr', 'MappingIntStrAny'] = None,
-        by_alias: bool = False,
-        skip_defaults: bool = None,
-        exclude_unset: bool = False,
-        exclude_defaults: bool = False,
-        exclude_none: bool = False,
+            self,
+            *,
+            include: Union['AbstractSetIntStr', 'MappingIntStrAny'] = None,
+            exclude: Union['AbstractSetIntStr', 'MappingIntStrAny'] = None,
+            by_alias: bool = False,
+            skip_defaults: bool = None,
+            exclude_unset: bool = False,
+            exclude_defaults: bool = False,
+            exclude_none: bool = False,
     ) -> 'DictStrAny':
         """
         Generate a dictionary representation of the model, optionally specifying which fields to include or exclude.
-
         """
         if skip_defaults is not None:
             warnings.warn(
@@ -403,21 +412,20 @@ class BaseModel(Representation, metaclass=ModelMetaclass):
         )
 
     def json(
-        self,
-        *,
-        include: Union['AbstractSetIntStr', 'MappingIntStrAny'] = None,
-        exclude: Union['AbstractSetIntStr', 'MappingIntStrAny'] = None,
-        by_alias: bool = False,
-        skip_defaults: bool = None,
-        exclude_unset: bool = False,
-        exclude_defaults: bool = False,
-        exclude_none: bool = False,
-        encoder: Optional[Callable[[Any], Any]] = None,
-        **dumps_kwargs: Any,
+            self,
+            *,
+            include: Union['AbstractSetIntStr', 'MappingIntStrAny'] = None,
+            exclude: Union['AbstractSetIntStr', 'MappingIntStrAny'] = None,
+            by_alias: bool = False,
+            skip_defaults: bool = None,
+            exclude_unset: bool = False,
+            exclude_defaults: bool = False,
+            exclude_none: bool = False,
+            encoder: Optional[Callable[[Any], Any]] = None,
+            **dumps_kwargs: Any,
     ) -> str:
         """
         Generate a JSON representation of the model, `include` and `exclude` arguments as per `dict()`.
-
         `encoder` is an optional function to supply as `default` to json.dumps(), other arguments as per `json.dumps()`.
         """
         if skip_defaults is not None:
@@ -442,7 +450,8 @@ class BaseModel(Representation, metaclass=ModelMetaclass):
     @classmethod
     def parse_obj(cls: Type['Model'], obj: Any) -> 'Model':
         if cls.__custom_root_type__ and (
-            not (isinstance(obj, dict) and obj.keys() == {ROOT_KEY}) or cls.__fields__[ROOT_KEY].shape == SHAPE_MAPPING
+                not (isinstance(obj, dict) and obj.keys() == {ROOT_KEY}) or cls.__fields__[
+            ROOT_KEY].shape == SHAPE_MAPPING
         ):
             obj = {ROOT_KEY: obj}
         elif not isinstance(obj, dict):
@@ -455,13 +464,13 @@ class BaseModel(Representation, metaclass=ModelMetaclass):
 
     @classmethod
     def parse_raw(
-        cls: Type['Model'],
-        b: StrBytes,
-        *,
-        content_type: str = None,
-        encoding: str = 'utf8',
-        proto: Protocol = None,
-        allow_pickle: bool = False,
+            cls: Type['Model'],
+            b: StrBytes,
+            *,
+            content_type: str = None,
+            encoding: str = 'utf8',
+            proto: Protocol = None,
+            allow_pickle: bool = False,
     ) -> 'Model':
         try:
             obj = load_str_bytes(
@@ -478,13 +487,13 @@ class BaseModel(Representation, metaclass=ModelMetaclass):
 
     @classmethod
     def parse_file(
-        cls: Type['Model'],
-        path: Union[str, Path],
-        *,
-        content_type: str = None,
-        encoding: str = 'utf8',
-        proto: Protocol = None,
-        allow_pickle: bool = False,
+            cls: Type['Model'],
+            path: Union[str, Path],
+            *,
+            content_type: str = None,
+            encoding: str = 'utf8',
+            proto: Protocol = None,
+            allow_pickle: bool = False,
     ) -> 'Model':
         obj = load_file(
             path,
@@ -538,16 +547,15 @@ class BaseModel(Representation, metaclass=ModelMetaclass):
         return m
 
     def copy(
-        self: 'Model',
-        *,
-        include: Union['AbstractSetIntStr', 'MappingIntStrAny'] = None,
-        exclude: Union['AbstractSetIntStr', 'MappingIntStrAny'] = None,
-        update: 'DictStrAny' = None,
-        deep: bool = False,
+            self: 'Model',
+            *,
+            include: Union['AbstractSetIntStr', 'MappingIntStrAny'] = None,
+            exclude: Union['AbstractSetIntStr', 'MappingIntStrAny'] = None,
+            update: 'DictStrAny' = None,
+            deep: bool = False,
     ) -> 'Model':
         """
         Duplicate a model, optionally choose which fields to include, exclude and change.
-
         :param include: fields to include in new model
         :param exclude: fields to exclude from new model, as with values this takes precedence over include
         :param update: values to change/add in the new model. Note: the data is not validated before creating
@@ -613,15 +621,15 @@ class BaseModel(Representation, metaclass=ModelMetaclass):
     @classmethod
     @no_type_check
     def _get_value(
-        cls,
-        v: Any,
-        to_dict: bool,
-        by_alias: bool,
-        include: Optional[Union['AbstractSetIntStr', 'MappingIntStrAny']],
-        exclude: Optional[Union['AbstractSetIntStr', 'MappingIntStrAny']],
-        exclude_unset: bool,
-        exclude_defaults: bool,
-        exclude_none: bool,
+            cls,
+            v: Any,
+            to_dict: bool,
+            by_alias: bool,
+            include: Optional[Union['AbstractSetIntStr', 'MappingIntStrAny']],
+            exclude: Optional[Union['AbstractSetIntStr', 'MappingIntStrAny']],
+            exclude_unset: bool,
+            exclude_defaults: bool,
+            exclude_none: bool,
     ) -> Any:
 
         if isinstance(v, BaseModel):
@@ -654,7 +662,7 @@ class BaseModel(Representation, metaclass=ModelMetaclass):
                 )
                 for k_, v_ in v.items()
                 if (not value_exclude or not value_exclude.is_excluded(k_))
-                and (not value_include or value_include.is_included(k_))
+                   and (not value_include or value_include.is_included(k_))
             }
 
         elif sequence_like(v):
@@ -694,14 +702,14 @@ class BaseModel(Representation, metaclass=ModelMetaclass):
         yield from self.__dict__.items()
 
     def _iter(
-        self,
-        to_dict: bool = False,
-        by_alias: bool = False,
-        include: Union['AbstractSetIntStr', 'MappingIntStrAny'] = None,
-        exclude: Union['AbstractSetIntStr', 'MappingIntStrAny'] = None,
-        exclude_unset: bool = False,
-        exclude_defaults: bool = False,
-        exclude_none: bool = False,
+            self,
+            to_dict: bool = False,
+            by_alias: bool = False,
+            include: Union['AbstractSetIntStr', 'MappingIntStrAny'] = None,
+            exclude: Union['AbstractSetIntStr', 'MappingIntStrAny'] = None,
+            exclude_unset: bool = False,
+            exclude_defaults: bool = False,
+            exclude_none: bool = False,
     ) -> 'TupleGenerator':
 
         allowed_keys = self._calculate_keys(include=include, exclude=exclude, exclude_unset=exclude_unset)
@@ -715,9 +723,9 @@ class BaseModel(Representation, metaclass=ModelMetaclass):
 
         for field_key, v in self.__dict__.items():
             if (
-                (allowed_keys is not None and field_key not in allowed_keys)
-                or (exclude_none and v is None)
-                or (exclude_defaults and self.__field_defaults__.get(field_key, _missing) == v)
+                    (allowed_keys is not None and field_key not in allowed_keys)
+                    or (exclude_none and v is None)
+                    or (exclude_defaults and self.__field_defaults__.get(field_key, _missing) == v)
             ):
                 continue
             if by_alias and field_key in self.__fields__:
@@ -738,11 +746,11 @@ class BaseModel(Representation, metaclass=ModelMetaclass):
             yield dict_key, v
 
     def _calculate_keys(
-        self,
-        include: Optional[Union['AbstractSetIntStr', 'MappingIntStrAny']],
-        exclude: Optional[Union['AbstractSetIntStr', 'MappingIntStrAny']],
-        exclude_unset: bool,
-        update: Optional['DictStrAny'] = None,
+            self,
+            include: Optional[Union['AbstractSetIntStr', 'MappingIntStrAny']],
+            exclude: Optional[Union['AbstractSetIntStr', 'MappingIntStrAny']],
+            exclude_unset: bool,
+            update: Optional['DictStrAny'] = None,
     ) -> Optional[AbstractSet[str]]:
         if include is None and exclude is None and exclude_unset is False:
             return None
@@ -798,13 +806,13 @@ _is_base_model_class_defined = True
 
 
 def create_model(
-    __model_name: str,
-    *,
-    __config__: Type[BaseConfig] = None,
-    __base__: Type[BaseModel] = None,
-    __module__: Optional[str] = None,
-    __validators__: Dict[str, classmethod] = None,
-    **field_definitions: Any,
+        __model_name: str,
+        *,
+        __config__: Type[BaseConfig] = None,
+        __base__: Type[BaseModel] = None,
+        __module__: Optional[str] = None,
+        __validators__: Dict[str, classmethod] = None,
+        **field_definitions: Any,
 ) -> Type[BaseModel]:
     """
     Dynamically create a model.
@@ -857,7 +865,7 @@ _missing = object()
 
 
 def validate_model(  # noqa: C901 (ignore complexity)
-    model: Type[BaseModel], input_data: 'DictStrAny', cls: 'ModelOrDc' = None
+        model: Type[BaseModel], input_data: 'DictStrAny', cls: 'ModelOrDc' = None
 ) -> Tuple['DictStrAny', 'SetStr', Optional[ValidationError]]:
     """
     validate data against a model.
@@ -941,7 +949,6 @@ def validate_model(  # noqa: C901 (ignore complexity)
             values = validator(cls_, values)
         except (ValueError, TypeError, AssertionError) as exc:
             errors.append(ErrorWrapper(exc, loc=ROOT_KEY))
-            break
 
     if errors:
         return values, fields_set, ValidationError(errors, cls_)
